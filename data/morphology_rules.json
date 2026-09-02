@@ -1,0 +1,35 @@
+{
+  "Syrphidae": {
+    "characters": [
+      "Look for the spurious vein (vena spuria) in the wing.",
+      "Check whether vein R4+5 is strongly dipped/looped and inspect the wing-cell pattern.",
+      "For Eristalini-like candidates, inspect hind femur/tibia shape and facial profile.",
+      "For species-level work, photograph face, antenna/arista, hind leg and wing separately."
+    ],
+    "notes": "Image similarity is useful for narrowing candidates, but many Syrphidae species require targeted morphology."
+  },
+  "Muscidae": {
+    "characters": [
+      "Inspect meron for hairs/setulae and the katepisternal bristle pattern.",
+      "Check vein M1 course and calypter development.",
+      "Photograph thoracic chaetotaxy dorsally and laterally."
+    ],
+    "notes": "Species-level identification often depends on chaetotaxy and sex-specific characters."
+  },
+  "Tachinidae": {
+    "characters": [
+      "Check postscutellum development and meral setae.",
+      "Inspect facial ridge setae, arista, and thoracic bristle rows.",
+      "For difficult genera, add lateral head and abdominal dorsal views."
+    ],
+    "notes": "Tachinidae are often visually convergent; morphology should overrule image similarity."
+  },
+  "Dolichopodidae": {
+    "characters": [
+      "Inspect wing venation, especially M and R branches.",
+      "Check antennal insertion, arista position and leg modifications.",
+      "Male secondary sexual characters can be decisive; record sex where possible."
+    ],
+    "notes": "Genus/species inference from habitus alone can be unreliable."
+  }
+}

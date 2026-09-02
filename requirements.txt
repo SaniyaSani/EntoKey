@@ -1,0 +1,15 @@
+torch>=2.2
+torchvision>=0.17
+transformers>=4.45
+Pillow>=10.0
+numpy>=1.26
+pandas>=2.2
+pyarrow>=17.0
+scikit-learn>=1.5
+joblib>=1.4
+requests>=2.32
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.9
+pydantic>=2.8
+faiss-cpu>=1.8; platform_machine != "arm64"

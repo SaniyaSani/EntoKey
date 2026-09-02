@@ -1,0 +1,10 @@
+{
+  "_general": [
+    {"title": "Diptera-Key DE (local project copy)", "type": "family key", "status": "add page mapping"},
+    {"title": "Fauna Europaea / national checklists", "type": "distribution cross-check", "status": "link later"}
+  ],
+  "Syrphidae": [
+    {"title": "van Veen — Hoverflies of Northwest Europe", "type": "key", "status": "reference"},
+    {"title": "Speight — Species Accounts of European Syrphidae", "type": "species accounts", "status": "reference"}
+  ]
+}

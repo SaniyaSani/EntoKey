@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Swiss Diptera ID Workbench</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <p class="eyebrow">SWISS DIPTERA ID WORKBENCH · REAL ML PIPELINE</p>
+        <h1>From specimen image to <em>testable</em> identification.</h1>
+        <p class="lead">DINOv2 visual embeddings + hierarchical classifiers + nearest verified specimens + morphology checks.</p>
+      </div>
+      <div class="badge" id="healthBadge">checking model…</div>
+    </header>
+
+    <section class="grid">
+      <article class="card upload-card">
+        <h2>01 · Add specimen</h2>
+        <label class="drop" id="dropZone">
+          <input id="fileInput" type="file" accept="image/*" />
+          <img id="preview" alt="preview" hidden />
+          <div id="dropText">
+            <div class="fly">🪰</div>
+            <strong>Drop a fly image here</strong>
+            <span>or tap to choose from camera roll</span>
+          </div>
+        </label>
+        <button id="identifyBtn" disabled>Identify specimen</button>
+        <p class="micro">No mock result: if trained artifacts are missing, the app says so instead of inventing an ID.</p>
+      </article>
+
+      <article class="card result-card">
+        <div class="section-head"><h2>02 · AI pre-identification</h2><span id="acceptedPill" class="pill">awaiting image</span></div>
+        <div id="predictionArea" class="empty">Upload an image to calculate a real DINOv2 embedding.</div>
+      </article>
+    </section>
+
+    <section class="grid lower">
+      <article class="card">
+        <h2>03 · Similar reference specimens</h2>
+        <div id="neighbours" class="thumb-grid empty">Nearest neighbours will appear here.</div>
+      </article>
+      <article class="card">
+        <h2>04 · Verify morphology</h2>
+        <div id="diagnostics" class="empty">The workbench will suggest characters to inspect for the leading family.</div>
+      </article>
+    </section>
+
+    <footer>
+      <span>DINOv2 backbone</span><span>•</span><span>license-aware training manifest</span><span>•</span><span>human verification first</span>
+    </footer>
+  </main>
+<script src="/static/app.js"></script>
+</body>
+</html>

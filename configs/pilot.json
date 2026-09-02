@@ -1,0 +1,36 @@
+{
+  "output_dir": "data/corpus",
+  "sources": {
+    "inat": {
+      "enabled": false,
+      "observations": "data/raw/inaturalist/observations.csv.gz",
+      "photos": "data/raw/inaturalist/photos.csv.gz",
+      "taxa": "data/raw/inaturalist/taxa.csv.gz",
+      "observers": "data/raw/inaturalist/observers.csv.gz",
+      "quality_grades": "research",
+      "max_observations": 50000
+    },
+    "bioscan": {
+      "enabled": false,
+      "metadata": "data/raw/bioscan/diptera_metadata.csv",
+      "image_root": ""
+    },
+    "gbif": {
+      "enabled": false,
+      "occurrence": "data/raw/gbif/extracted/occurrence.txt",
+      "multimedia": "data/raw/gbif/extracted/multimedia.txt"
+    },
+    "dissco": {
+      "enabled": false,
+      "input": "data/raw/dissco/diptera_export.jsonl"
+    },
+    "normalized_manifests": []
+  },
+  "pilot": {
+    "rank": "family",
+    "max_per_taxon": 250,
+    "min_per_taxon": 8,
+    "max_per_source_taxon": 150,
+    "seed": 42
+  }
+}
