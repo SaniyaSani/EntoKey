@@ -1,0 +1,23 @@
+{
+  "families": [
+    "Phoridae",
+    "Sciaridae",
+    "Cecidomyiidae",
+    "Mycetophilidae",
+    "Chironomidae",
+    "Ceratopogonidae",
+    "Psychodidae",
+    "Sphaeroceridae",
+    "Chloropidae",
+    "Drosophilidae",
+    "Ephydridae",
+    "Agromyzidae",
+    "Milichiidae",
+    "Carnidae",
+    "Anthomyzidae",
+    "Asteiidae",
+    "Fanniidae",
+    "Sepsidae"
+  ],
+  "purpose": "Family-first MicroDiptera pilot; species training requires curated A/B labels"
+}

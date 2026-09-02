@@ -1,5 +1,61 @@
 # Swiss Diptera ID Workbench 🪰
 
+## Новое в v0.6: BIOSCAN Diptera 30k без полного image corpus
+
+Перед foundation training теперь есть отдельный надёжный этап BIOSCAN:
+
+- потоковый фильтр официальных метаданных только по `order = Diptera`;
+- ровно 30 000 taxon-balanced specimens;
+- сохранение официальных train/val/test/unseen split’ов;
+- выборочное извлечение JPEG из официальных ZIP по HTTP Range;
+- checksum metadata, проверка каждого JPEG и атомарная запись;
+- checkpoint и безопасное продолжение после остановки Colab;
+- готовый provenance-rich Parquet manifest для master corpus.
+
+Начни здесь: [BIOSCAN_30K_V06_RU.md](BIOSCAN_30K_V06_RU.md), затем открой
+`notebooks/BIOSCAN_30K_SELECTIVE_v06_Colab.ipynb`.
+
+Одна команда:
+
+```bash
+python scripts/run_bioscan_30k.py --root ~/EntoKeyData/bioscan
+```
+
+## Новое в v0.5: Foundation Corpus 100k
+
+Это первый действительно multi-source training workflow:
+
+- 30k iNaturalist field images;
+- 30k BIOSCAN-5M DNA/BIN-backed specimens;
+- 25k GBIF preserved specimen images;
+- 15k DiSSCo digital specimens;
+- DINOv2-base at 518 px with whole-image + four tiles;
+- примерно 50 возобновляемых embedding shards;
+- JPEG from URL sources декодируются в памяти и не обязаны храниться целиком;
+- строгая проверка, что все четыре источника присутствуют до обучения.
+
+Основной 100k profile теперь лежит в `configs/foundation_corpus_v06.json`. Рядом есть `configs/foundation_corpus_full_v05.json`: он снимает sample cap и потоково планирует все eligible records.
+
+Начни с [FOUNDATION_V05_RU.md](FOUNDATION_V05_RU.md), затем открой:
+
+1. `notebooks/Foundation_Corpus_v05_SETUP_Colab.ipynb`;
+2. `notebooks/Foundation_Corpus_v05_TRAIN_Colab.ipynb`.
+
+## Новое в v0.4: MicroDiptera
+
+Следующая модель предназначена для маленьких и сложных Diptera:
+
+- 18 targeted MicroDiptera families;
+- family-balanced pilot collection;
+- DINOv2 at 518 px + four detail tiles;
+- multi-view specimen fusion;
+- conditional family → genus → species heads;
+- centroid-based open-set rejection;
+- species training только на curated A/B labels по умолчанию.
+
+Запуск: [MICRODIPTERA_V04_RU.md](MICRODIPTERA_V04_RU.md) и
+`notebooks/MicroDiptera_v04_Colab.ipynb`.
+
 ## Новое в v0.3: One-Command Training Kit
 
 v0.3 превращает корпусный pipeline в запускаемый workflow:
@@ -86,7 +142,7 @@ python scripts/embed_dataset.py --manifest data/inat_pilot_manifest.csv
 ### 4. Обучить family/genus/species classifiers
 
 ```bash
-python scripts/train_classifiers.py --min-images-per-class 8
+python scripts/train_multidomain.py --min-images-per-class 8 --out models/classifiers.joblib
 ```
 
 Скрипт сначала оценивает top-1/top-5 на group-based holdout (одна observation не течёт одновременно в train/test), потом переобучает classifier на всех пригодных данных.
@@ -138,7 +194,7 @@ python scripts/merge_manifests.py \
 
 ```bash
 python scripts/embed_dataset.py --manifest data/training_manifest.csv
-python scripts/train_classifiers.py
+python scripts/train_multidomain.py --out models/classifiers.joblib
 python scripts/build_retrieval_index.py
 ```
 
@@ -182,15 +238,14 @@ Key / publication
 Human-confirmed identification
 ```
 
-# Следующий scientific upgrade
+# Следующие scientific upgrades после v0.5
 
-1. **Hierarchical conditional heads**: genus classifier только внутри predicted family; species только внутри genus.
-2. **Open-set rejection**: модель должна уметь сказать «этого taxon нет в training set».
-3. **Domain-balanced training**: iNaturalist field photos + museum pinned specimens + microscope views.
+1. **Open-set calibration** на отдельном наборе неизвестных taxa и imaging domains.
+2. **Multimodal image ↔ DNA embedding** на BIOSCAN specimens.
+3. **Learned diagnostic regions** вместо только фиксированных image tiles.
 4. **Geographic prior**: Switzerland/canton/altitude/phenology как отдельный score, а не как замена morphology.
-5. **Multi-view specimen fusion**: несколько фото одного specimen → один combined embedding / prediction.
-6. **Active learning**: uncertain specimens складываются в очередь для ручной проверки; после верификации попадают обратно в training set.
-7. **Key routing**: family/genus candidate автоматически открывает нужный couplet/page/diagnostic characters.
+5. **Active learning**: uncertain specimens складываются в очередь для ручной проверки; после верификации попадают обратно в training set.
+6. **Key routing**: family/genus candidate автоматически открывает нужный couplet/page/diagnostic characters.
 
 ## Что означает confidence
 

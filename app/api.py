@@ -13,14 +13,14 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from diptera_id.classifier import ClassifierBundle
 from diptera_id.embedding import DINOEmbedder
+from diptera_id.hierarchy import load_classifier_bundle
 from diptera_id.morphology import diagnostic_help
 from diptera_id.retrieval import RetrievalIndex
 
 MODEL_DIR = ROOT / os.getenv("DIPTERA_MODEL_DIR", "models")
 
-app = FastAPI(title="Swiss Diptera ID Workbench", version="0.1.0")
+app = FastAPI(title="Swiss Diptera ID Workbench", version="0.6.0")
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
 
 _state = {"embedder": None, "classifiers": None, "retrieval": None}
@@ -36,12 +36,16 @@ def get_models():
     if not artifacts_ready():
         raise HTTPException(
             status_code=503,
-            detail="Real ML artifacts are not trained yet. Run build/download → embed_dataset.py → train_classifiers.py → build_retrieval_index.py. No fake prediction is returned."
+            detail="Real ML artifacts are not trained yet. Run build/download → embeddings → classifier training → retrieval index. No fake prediction is returned."
         )
-    if _state["embedder"] is None:
-        _state["embedder"] = DINOEmbedder("facebook/dinov2-small")
     if _state["classifiers"] is None:
-        _state["classifiers"] = ClassifierBundle.load(MODEL_DIR / "classifiers.joblib")
+        _state["classifiers"] = load_classifier_bundle(MODEL_DIR / "classifiers.joblib")
+    if _state["embedder"] is None:
+        embedding = _state["classifiers"].metadata.get("embedding", {})
+        _state["embedder"] = DINOEmbedder(
+            embedding.get("backbone", "facebook/dinov2-small"),
+            image_size=int(embedding.get("image_size", 224)),
+        )
     if _state["retrieval"] is None:
         _state["retrieval"] = RetrievalIndex.load(MODEL_DIR)
     return _state["embedder"], _state["classifiers"], _state["retrieval"]
@@ -54,11 +58,17 @@ def root():
 
 @app.get("/health")
 def health():
+    embedding_config = {}
+    config_path = MODEL_DIR / "embedding_config.json"
+    if config_path.exists():
+        import json
+        embedding_config = json.loads(config_path.read_text(encoding="utf-8"))
     return {
         "ok": True,
         "artifacts_ready": artifacts_ready(),
         "model_dir": str(MODEL_DIR),
-        "backbone": "facebook/dinov2-small"
+        "backbone": embedding_config.get("backbone", "facebook/dinov2-small"),
+        "embedding_shards": embedding_config.get("embedding_shards", 0),
     }
 
 
@@ -73,9 +83,17 @@ async def predict(file: UploadFile = File(...)):
         raise HTTPException(400, "Could not decode image")
 
     embedder, classifiers, retrieval = get_models()
-    embedding = embedder.embed_one(image)
+    embedding_config = classifiers.metadata.get("embedding", {})
+    tile_grid = int(embedding_config.get("tile_grid", 1))
+    include_whole = bool(embedding_config.get("include_whole", True))
+    embedding = (
+        embedder.embed_multicrop(image, tile_grid=tile_grid, include_whole=include_whole)
+        if tile_grid > 1
+        else embedder.embed_one(image)
+    )
     predictions = classifiers.predict_all(embedding, top_k=5)
     neighbours = retrieval.search(embedding, k=8)
+    open_set = getattr(classifiers, "last_open_set", {"rejected": False})
 
     best_family = predictions.get("family", [{}])[0].get("taxon") if predictions.get("family") else None
     diagnostics = diagnostic_help(
@@ -85,11 +103,13 @@ async def predict(file: UploadFile = File(...)):
     )
 
     # Conservative stopping rule: report the finest rank whose top score crosses threshold.
-    thresholds = {"family": 0.55, "genus": 0.60, "species": 0.72}
+    thresholds = {"family": 0.40, "genus": 0.50, "species": 0.65}
     accepted_rank = None
     accepted_taxon = None
     for rank in ("family", "genus", "species"):
         candidates = predictions.get(rank) or []
+        if open_set.get("rejected") and open_set.get("rank") == rank:
+            break
         if candidates and candidates[0]["probability"] >= thresholds[rank]:
             accepted_rank = rank
             accepted_taxon = candidates[0]["taxon"]
@@ -99,6 +119,7 @@ async def predict(file: UploadFile = File(...)):
     return {
         "accepted": {"rank": accepted_rank, "taxon": accepted_taxon},
         "predictions": predictions,
+        "open_set": open_set,
         "similar_specimens": neighbours,
         "diagnostics": diagnostics,
         "warnings": [

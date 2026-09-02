@@ -7,9 +7,6 @@ import shutil
 import tarfile
 from pathlib import Path
 
-import requests
-
-
 DEFAULT_URL = "https://inaturalist-open-data.s3.amazonaws.com/metadata/inaturalist-open-data-latest.tar.gz"
 WANTED = {"observations.csv.gz", "photos.csv.gz", "taxa.csv.gz", "observers.csv.gz"}
 
@@ -20,6 +17,8 @@ def safe_member_name(member: tarfile.TarInfo) -> str | None:
 
 
 def download(url: str, destination: Path) -> None:
+    import requests
+
     destination.parent.mkdir(parents=True, exist_ok=True)
     partial = destination.with_suffix(destination.suffix + ".part")
     with requests.get(url, stream=True, timeout=(30, 300)) as response:

@@ -1,0 +1,28 @@
+{
+  "profile": "foundation-100k-v0.5",
+  "description": "First research-scale pass across field, DNA-backed and museum image domains.",
+  "total_images": 100000,
+  "source_targets": {
+    "iNaturalist": 30000,
+    "BIOSCAN-5M": 30000,
+    "GBIF": 25000,
+    "DiSSCo": 15000
+  },
+  "sampling_rank": "hierarchical",
+  "max_per_source_taxon": 5000,
+  "seed": 42,
+  "shard_size": 2000,
+  "embedding": {
+    "model": "facebook/dinov2-base",
+    "image_size": 518,
+    "tile_grid": 2,
+    "include_whole": true,
+    "batch_size": 2
+  },
+  "training": {
+    "min_family": 50,
+    "min_genus": 25,
+    "min_species": 12,
+    "species_label_quality": "A,B"
+  }
+}

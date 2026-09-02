@@ -1,0 +1,28 @@
+{
+  "profile": "foundation-full-corpus-v0.5",
+  "description": "Uncapped pass over every eligible record from all four normalized sources.",
+  "total_images": 0,
+  "source_targets": {
+    "iNaturalist": 1,
+    "BIOSCAN-5M": 1,
+    "GBIF": 1,
+    "DiSSCo": 1
+  },
+  "sampling_rank": "hierarchical",
+  "max_per_source_taxon": 0,
+  "seed": 42,
+  "shard_size": 5000,
+  "embedding": {
+    "model": "facebook/dinov2-base",
+    "image_size": 518,
+    "tile_grid": 2,
+    "include_whole": true,
+    "batch_size": 4
+  },
+  "training": {
+    "min_family": 100,
+    "min_genus": 50,
+    "min_species": 20,
+    "species_label_quality": "A,B"
+  }
+}

@@ -1,6 +1,6 @@
 [project]
 name = "swiss-diptera-id-workbench"
-version = "0.3.0"
+version = "0.6.0"
 description = "DINOv2-based Diptera identification workbench with hierarchical classification and specimen retrieval"
 requires-python = ">=3.10"
 

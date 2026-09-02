@@ -19,7 +19,7 @@ from diptera_id.corpus.io import ManifestWriter, iter_table
 from diptera_id.corpus.schema import finalize_record, normalize_license
 
 
-UA = "SwissDipteraIDWorkbench/0.2 (licensed research image cache)"
+UA = "EntoKey-Foundation/0.5 (licensed research image cache)"
 
 
 def safe_source(value: str) -> str:

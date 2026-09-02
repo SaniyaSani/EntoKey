@@ -22,8 +22,9 @@ def main():
     np.save(model_dir / "retrieval_vectors.npy", x)
     keep_cols = [c for c in [
         "source", "observation_id", "photo_id", "image_url", "local_path",
-        "family", "genus", "species", "observed_on", "observer", "photo_license",
-        "attribution", "observation_url"
+        "family", "genus", "species", "event_date", "observer", "photo_license",
+        "attribution", "observation_url", "specimen_group_id", "view_type",
+        "view_count", "available_views", "label_quality"
     ] if c in df.columns]
     df[keep_cols].to_csv(model_dir / "retrieval_metadata.csv", index=False)
 

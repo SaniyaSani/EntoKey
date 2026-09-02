@@ -43,6 +43,17 @@ def test_colab_notebook_is_valid_json():
     notebook = json.loads((root / "notebooks/Diptera_Training_Colab.ipynb").read_text(encoding="utf-8"))
     assert notebook["nbformat"] == 4
     assert len(notebook["cells"]) >= 5
+    micro = json.loads((root / "notebooks/MicroDiptera_v04_Colab.ipynb").read_text(encoding="utf-8"))
+    assert micro["nbformat"] == 4
+    assert any("train_hierarchical.py" in "".join(cell.get("source", [])) for cell in micro["cells"])
+    setup = json.loads((root / "notebooks/Foundation_Corpus_v05_SETUP_Colab.ipynb").read_text(encoding="utf-8"))
+    train = json.loads((root / "notebooks/Foundation_Corpus_v05_TRAIN_Colab.ipynb").read_text(encoding="utf-8"))
+    bioscan = json.loads((root / "notebooks/BIOSCAN_30K_SELECTIVE_v06_Colab.ipynb").read_text(encoding="utf-8"))
+    assert any("download_dissco.py" in "".join(cell.get("source", [])) for cell in setup["cells"])
+    assert any("run_bioscan_30k.py" in "".join(cell.get("source", [])) for cell in setup["cells"])
+    assert any("run_foundation_v06.py" in "".join(cell.get("source", [])) for cell in train["cells"])
+    assert any("--selection-only" in "".join(cell.get("source", [])) for cell in bioscan["cells"])
+    assert any("download_report['complete'] == 30000" in "".join(cell.get("source", [])) for cell in bioscan["cells"])
 
 
 def test_multidomain_trainer_writes_real_models(tmp_path: Path):

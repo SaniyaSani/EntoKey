@@ -1,0 +1,35 @@
+{
+  "metadata": {
+    "url": "https://zenodo.org/records/11973457/files/BIOSCAN_5M_Insect_Dataset_metadata_MultiTypes.zip",
+    "archive_md5": "ac381b69fafdbaedc2f9cfb89e3571f7",
+    "csv_md5": "603020b433ef566946efba7a08dbb23d"
+  },
+  "archives": {
+    "pretrain": [
+      {
+        "name": "pretrain01",
+        "url": "https://zenodo.org/records/11973457/files/BIOSCAN_5M_cropped_256_pretrain.01.zip",
+        "md5": "0e1cfa86dc7fa4d9c10036990992a2dd"
+      },
+      {
+        "name": "pretrain02",
+        "url": "https://zenodo.org/records/11973457/files/BIOSCAN_5M_cropped_256_pretrain.02.zip",
+        "md5": "ca3191d307957732e8108121b20a2059"
+      }
+    ],
+    "train": [
+      {
+        "name": "train",
+        "url": "https://zenodo.org/records/11973457/files/BIOSCAN_5M_cropped_256_train.zip",
+        "md5": "3f170db5d95610644883dafc73389049"
+      }
+    ],
+    "eval": [
+      {
+        "name": "eval",
+        "url": "https://zenodo.org/records/11973457/files/BIOSCAN_5M_cropped_256_eval.zip",
+        "md5": "16a997f72a8cd08cbcf7becafe2dda50"
+      }
+    ]
+  }
+}

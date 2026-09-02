@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""Create high-resolution tiled embeddings and fuse all views of each specimen."""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from PIL import Image
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "src"))
+
+from diptera_id.corpus.io import load_manifest
+
+
+def crops_for(image: Image.Image, tile_grid: int, include_whole: bool) -> list[Image.Image]:
+    image = image.convert("RGB")
+    crops = [image] if include_whole else []
+    if tile_grid > 1:
+        width, height = image.size
+        for row in range(tile_grid):
+            for column in range(tile_grid):
+                crops.append(image.crop((
+                    round(column * width / tile_grid),
+                    round(row * height / tile_grid),
+                    round((column + 1) * width / tile_grid),
+                    round((row + 1) * height / tile_grid),
+                )))
+    return crops or [image]
+
+
+def normalized_mean(vectors: np.ndarray) -> np.ndarray:
+    fused = vectors.mean(axis=0)
+    return (fused / max(float(np.linalg.norm(fused)), 1e-12)).astype(np.float32)
+
+
+def fuse_specimens(frame: pd.DataFrame, vectors: np.ndarray) -> tuple[pd.DataFrame, np.ndarray]:
+    if len(frame) != len(vectors):
+        raise ValueError("view manifest and embeddings have different row counts")
+    group_column = next((name for name in ("specimen_group_id", "split_group", "record_id") if name in frame.columns), None)
+    if not group_column:
+        frame = frame.copy()
+        frame["record_id"] = [f"view-{index}" for index in range(len(frame))]
+        group_column = "record_id"
+
+    rows: list[dict] = []
+    fused_vectors: list[np.ndarray] = []
+    for group, indices in frame.groupby(group_column, sort=True).indices.items():
+        selected = np.asarray(indices, dtype=int)
+        row = frame.iloc[selected[0]].to_dict()
+        views = sorted({str(value) for value in frame.iloc[selected].get("view_type", pd.Series(["habitus"])).tolist() if str(value)})
+        row["view_count"] = len(selected)
+        row["available_views"] = ",".join(views) or "habitus"
+        row["specimen_group_id"] = str(group)
+        row["split_group"] = str(group)
+        for rank in ("family", "genus", "species"):
+            if rank not in frame.columns:
+                continue
+            values = {str(value) for value in frame.iloc[selected][rank].tolist() if str(value)}
+            if len(values) > 1:
+                row[rank] = ""
+                row["eligible_supervised"] = False
+                row["exclusion_reason"] = f"conflicting_{rank}_within_specimen"
+        rows.append(row)
+        fused_vectors.append(normalized_mean(vectors[selected]))
+    return pd.DataFrame(rows), np.stack(fused_vectors).astype(np.float32)
+
+
+def main() -> None:
+    from diptera_id.embedding import DINOEmbedder
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", required=True)
+    parser.add_argument("--out-dir", default="models_microdiptera")
+    parser.add_argument("--model", default="facebook/dinov2-small")
+    parser.add_argument("--image-size", type=int, default=518)
+    parser.add_argument("--tile-grid", type=int, default=2)
+    parser.add_argument("--batch-size", type=int, default=4, help="Specimens per GPU batch; each produces whole + tiles")
+    parser.add_argument("--no-whole", action="store_true")
+    args = parser.parse_args()
+    if args.image_size % 14:
+        raise SystemExit("DINOv2 image-size must be divisible by patch size 14 (use 224 or 518)")
+    if args.tile_grid < 1 or args.tile_grid > 4:
+        raise SystemExit("tile-grid must be between 1 and 4")
+
+    frame = load_manifest(args.manifest).fillna("")
+    frame = frame[frame["local_path"].astype(str).map(lambda value: Path(value).is_file())].reset_index(drop=True)
+    if frame.empty:
+        raise SystemExit("No local images found in manifest")
+    if "view_type" not in frame.columns:
+        frame["view_type"] = "habitus"
+    frame.loc[frame["view_type"].astype(str).eq(""), "view_type"] = "habitus"
+
+    embedder = DINOEmbedder(args.model, image_size=args.image_size)
+    kept_rows: list[int] = []
+    view_vectors: list[np.ndarray] = []
+    include_whole = not args.no_whole
+    for start in range(0, len(frame), args.batch_size):
+        chunk = frame.iloc[start:start + args.batch_size]
+        flat_crops: list[Image.Image] = []
+        counts: list[int] = []
+        valid_indices: list[int] = []
+        for index, row in chunk.iterrows():
+            try:
+                image = Image.open(row["local_path"]).convert("RGB")
+                crops = crops_for(image, args.tile_grid, include_whole)
+            except Exception as exc:
+                print(f"skip {row['local_path']}: {exc}")
+                continue
+            flat_crops.extend(crops)
+            counts.append(len(crops))
+            valid_indices.append(index)
+        if flat_crops:
+            embedded = embedder.embed_images(flat_crops)
+            cursor = 0
+            for index, count in zip(valid_indices, counts):
+                view_vectors.append(normalized_mean(embedded[cursor:cursor + count]))
+                kept_rows.append(index)
+                cursor += count
+        print(f"embedded views: {min(start + args.batch_size, len(frame))}/{len(frame)}")
+
+    if not view_vectors:
+        raise SystemExit("No images could be embedded")
+    view_frame = frame.loc[kept_rows].reset_index(drop=True)
+    view_array = np.stack(view_vectors).astype(np.float32)
+    specimen_frame, specimen_array = fuse_specimens(view_frame, view_array)
+
+    out = Path(args.out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    np.save(out / "view_embeddings.npy", view_array)
+    view_frame.to_csv(out / "embedded_views_manifest.csv", index=False)
+    np.save(out / "embeddings.npy", specimen_array)
+    specimen_frame.to_csv(out / "embedded_manifest.csv", index=False)
+    config = {
+        "backbone": args.model,
+        "image_size": args.image_size,
+        "tile_grid": args.tile_grid,
+        "include_whole": include_whole,
+        "view_images": len(view_frame),
+        "fused_specimens": len(specimen_frame),
+    }
+    (out / "embedding_config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
+    print(f"saved {len(view_frame)} views fused into {len(specimen_frame)} specimens -> {out}")
+
+
+if __name__ == "__main__":
+    main()

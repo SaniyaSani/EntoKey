@@ -48,6 +48,10 @@ MASTER_COLUMNS = [
     "event_date",
     "sex",
     "life_stage",
+    "view_type",
+    "parent_specimen_id",
+    "view_count",
+    "available_views",
     "dna_barcode",
     "dna_bin",
     "observation_id",  # backwards-compatible v0.1 fields
@@ -191,7 +195,7 @@ def finalize_record(raw: Mapping[str, Any]) -> dict[str, Any]:
     record["observation_id"] = record["observation_id"] or source_record_id
     record["photo_id"] = record["photo_id"] or source_image_id
 
-    specimen_group = record["specimen_group_id"] or record["split_group"]
+    specimen_group = record["specimen_group_id"] or record["parent_specimen_id"] or record["split_group"]
     if not specimen_group:
         specimen_group = f"{record['source']}:{source_record_id}" if source_record_id else stable_id(record["source"], source_image_id, prefix="group")
     record["specimen_group_id"] = specimen_group
