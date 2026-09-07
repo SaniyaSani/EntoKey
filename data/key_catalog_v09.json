@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "references": [
+    {
+      "title": "Manual of European Diptera",
+      "authors": "L. Papp & B. Darvas (eds.)",
+      "type": "family and genus keys",
+      "families": [],
+      "genera": [],
+      "region": "Europe",
+      "notes": "Multi-volume starting point; verify which volume treats the candidate family."
+    },
+    {
+      "title": "Hoverflies of Northwest Europe: Identification Keys to the Syrphidae",
+      "authors": "M. P. van Veen",
+      "type": "genus and species keys",
+      "families": ["Syrphidae"],
+      "genera": [],
+      "region": "Northwest Europe",
+      "notes": "Strong regional lead for Swiss Syrphidae; check the edition and later taxonomic changes."
+    },
+    {
+      "title": "British genera of Chloropidae, subfamily Oscinellinae",
+      "type": "genus key",
+      "families": ["Chloropidae"],
+      "genera": [],
+      "region": "Britain",
+      "notes": "A local PDF may be available in the project owner's reference collection."
+    }
+  ]
+}

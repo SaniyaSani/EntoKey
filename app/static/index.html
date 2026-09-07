@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Swiss Diptera ID Workbench</title>
   <link rel="stylesheet" href="/static/style.css" />
+  <link rel="stylesheet" href="/static/key-finder.css" />
 </head>
 <body>
   <main class="shell">
@@ -12,7 +13,7 @@
       <div>
         <p class="eyebrow">SWISS DIPTERA ID WORKBENCH · REAL ML PIPELINE</p>
         <h1>From specimen image to <em>testable</em> identification.</h1>
-        <p class="lead">DINOv2 visual embeddings + hierarchical classifiers + nearest verified specimens + morphology checks.</p>
+        <p class="lead">DINOv3 whole-fly embeddings + hierarchical classifiers + nearest verified specimens + optional morphology checks.</p>
       </div>
       <div class="badge" id="healthBadge">checking model…</div>
     </header>
@@ -35,23 +36,27 @@
 
       <article class="card result-card">
         <div class="section-head"><h2>02 · AI pre-identification</h2><span id="acceptedPill" class="pill">awaiting image</span></div>
-        <div id="predictionArea" class="empty">Upload an image to calculate a real DINOv2 embedding.</div>
+        <div id="predictionArea" class="empty">Upload an image to calculate a real DINOv3 whole-fly embedding.</div>
+        <div class="key-finder-panel">
+          <div class="section-head"><h2>03 · Genus Key Finder</h2><span class="pill">automatic</span></div>
+          <div id="keyFinder" class="empty">After genus candidates appear, TaxaLens will search for identification keys and revisions.</div>
+        </div>
       </article>
     </section>
 
     <section class="grid lower">
       <article class="card">
-        <h2>03 · Similar reference specimens</h2>
+        <h2>04 · Similar reference specimens</h2>
         <div id="neighbours" class="thumb-grid empty">Nearest neighbours will appear here.</div>
       </article>
       <article class="card">
-        <h2>04 · Verify morphology</h2>
+        <h2>05 · Verify morphology</h2>
         <div id="diagnostics" class="empty">The workbench will suggest characters to inspect for the leading family.</div>
       </article>
     </section>
 
     <footer>
-      <span>DINOv2 backbone</span><span>•</span><span>license-aware training manifest</span><span>•</span><span>human verification first</span>
+      <span>DINOv3 whole-fly backbone</span><span>•</span><span>license-aware training manifest</span><span>•</span><span>human verification first</span>
     </footer>
   </main>
 <script src="/static/app.js"></script>

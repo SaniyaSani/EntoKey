@@ -1,4 +1,6 @@
-# EntoKey v0.6 — правильный BIOSCAN Diptera 30k
+> **LEGACY / reference:** этот документ сохранён для воспроизводимости старого pipeline. Для текущей архитектуры используй `README_RU.md` и `WHOLE_FLY_PIPELINE_RU.md`.
+
+# TaxaLens v0.6 — правильный BIOSCAN Diptera 30k
 
 Эта версия готовит **30 000 лицензированных изображений Diptera из BIOSCAN-5M** до начала обучения.
 
@@ -34,7 +36,7 @@
 
 ```bash
 python -m pip install -r requirements-foundation.txt
-python scripts/run_bioscan_30k.py --root ~/EntoKeyData/bioscan
+python scripts/run_bioscan_30k.py --root ~/TaxaLensData/bioscan
 ```
 
 Финальный успешный вывод:
@@ -56,7 +58,7 @@ BIOSCAN 30k READY: .../bioscan_diptera_30k_manifest.parquet
 
 ```bash
 python scripts/run_bioscan_30k.py \
-  --root ~/EntoKeyData/bioscan \
+  --root ~/TaxaLensData/bioscan \
   --selection-only
 ```
 
@@ -73,7 +75,7 @@ python scripts/run_bioscan_30k.py \
 
 ```bash
 python scripts/run_bioscan_30k.py \
-  --root ~/EntoKeyData/bioscan \
+  --root ~/TaxaLensData/bioscan \
   --no-suffix-range
 ```
 

@@ -1,0 +1,39 @@
+{
+  "profile": "wholefly-foundation-100k-v0.8-dinov3-base",
+  "description": "Heavier-backbone ablation using one complete image only. No default tiling.",
+  "total_images": 100000,
+  "source_targets": {
+    "iNaturalist": 30000,
+    "BIOSCAN-5M": 30000,
+    "GBIF": 25000,
+    "DiSSCo": 15000
+  },
+  "sampling_rank": "hierarchical",
+  "max_per_source_taxon": 5000,
+  "seed": 42,
+  "shard_size": 2000,
+  "embedding": {
+    "model": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+    "image_size": 512,
+    "tile_grid": 1,
+    "include_whole": true,
+    "batch_size": 2,
+    "strategy": "whole_image_only",
+    "segmentation_required": false,
+    "specimen_crop_required": false
+  },
+  "training": {
+    "min_family": 50,
+    "min_genus": 25,
+    "min_species": 12,
+    "species_label_quality": "A,B",
+    "gate_quantile": 0.05,
+    "gate_margin": 0.02
+  },
+  "experiments": {
+    "multi_crop_tiles": {
+      "enabled": false,
+      "status": "later_ablation"
+    }
+  }
+}

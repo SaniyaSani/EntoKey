@@ -1,4 +1,5 @@
 {
+  "scope": "TaxaLens target Diptera 20",
   "families": [
     "Phoridae",
     "Sciaridae",
@@ -21,5 +22,9 @@
     "Muscidae",
     "Tachinidae"
   ],
-  "purpose": "Legacy v0.4 filename retained for compatibility; current 20-family target includes Muscidae and Tachinidae; species training requires curated A/B labels"
+  "required_families": [
+    "Muscidae",
+    "Tachinidae"
+  ],
+  "purpose": "Family-first target set: the existing 18 MicroDiptera families plus Muscidae and Tachinidae; species training requires curated A/B labels"
 }

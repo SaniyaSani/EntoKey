@@ -1,0 +1,29 @@
+.key-finder-panel {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.key-list { display: grid; gap: 9px; }
+.key-hit {
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+.key-hit a, .key-hit > div > span:first-child {
+  font-family: Georgia, serif;
+  color: var(--ink);
+  font-size: 16px;
+}
+.key-hit p { margin: 5px 0; color: var(--muted); font-size: 11px; }
+.key-hit small { display: block; color: #62766c; line-height: 1.4; }
+.source-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: var(--blue);
+  font: 700 9px/1.2 Inter, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}

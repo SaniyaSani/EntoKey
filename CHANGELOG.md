@@ -1,3 +1,38 @@
+
+## v0.9.0 — Multi-source PoC + Genus Key Finder
+
+- Added one resumable entry point for BIOSCAN-5M, iNaturalist, GBIF and DiSSCo.
+- Fixed the PoC allocation at 30k + 30k + 25k + 15k = 100k images.
+- Switched the declared v0.9 baseline to one padded 512×512 DINOv3 ViT-B/16 image.
+- Added automatic genus-key discovery from the top genus candidates.
+- Added curated/offline references plus optional Crossref and OpenAlex discovery.
+- Added a `/keys/search` API endpoint and automatic non-blocking key results in the UI.
+- Added source-wise Markdown evaluation output for the Science IT / Overleaf report.
+- Kept cached images and embedding shards resumable.
+
+## v0.8.0 — Whole-Image Baseline First
+
+- Changed the **default representation to one complete image -> one DINOv3 embedding**.
+- Disabled 2x2 tiles in the default configuration (`tile_grid=1`).
+- Kept multi-crop code only as a later ablation; it must be enabled explicitly.
+- Kept anatomy segmentation disabled and made specimen cropping non-required.
+- Updated Colab, runner, source status, API wording and docs to the v0.8 baseline.
+- Preserved aspect ratio with square padding before DINOv3, avoiding destructive center crops.
+- Added a validation rule: crop/tiles/specialist modules are kept only if they improve the same held-out split.
+
+## v0.7.0 — Whole-Fly Foundation
+
+- Removed anatomy segmentation from the required training path.
+- Switched the default frozen backbone to DINOv3-small (`facebook/dinov3-vits16-pretrain-lvd1689m`).
+- Added a heavier DINOv3-Base profile for larger GPUs.
+- Whole-image + 2×2 high-resolution tiles are now the default representation strategy.
+- Kept hierarchical family → genus → species heads, source balancing, open-set centroid gates and nearest-specimen retrieval.
+- Added per-source / source-split evaluation and top confusion pairs to hierarchical reports.
+- Added source readiness checker for BIOSCAN + iNaturalist + GBIF + DiSSCo.
+- Added a backbone cache/preflight script.
+- Added a dedicated v0.7 Colab notebook and explicit error-driven morphology policy.
+- Anatomy, head and wing specialist models are now optional modules to be added only after baseline error analysis.
+
 # Changelog
 
 ## 0.6.0 — Selective BIOSCAN Diptera 30k
