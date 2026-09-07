@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create high-resolution tiled embeddings and fuse all views of each specimen."""
+"""Create whole-fly + high-resolution tile embeddings and fuse all views of each specimen."""
 from __future__ import annotations
 
 import argparse
@@ -76,14 +76,17 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--out-dir", default="models_microdiptera")
-    parser.add_argument("--model", default="facebook/dinov2-small")
-    parser.add_argument("--image-size", type=int, default=518)
-    parser.add_argument("--tile-grid", type=int, default=2)
-    parser.add_argument("--batch-size", type=int, default=4, help="Specimens per GPU batch; each produces whole + tiles")
+    parser.add_argument("--model", default="facebook/dinov3-vits16-pretrain-lvd1689m")
+    parser.add_argument("--image-size", type=int, default=512)
+    parser.add_argument("--tile-grid", type=int, default=1, help="1 = whole image only; set 2+ only for an explicit ablation")
+    parser.add_argument("--batch-size", type=int, default=4, help="Specimens per GPU batch; tiles are produced only when --tile-grid > 1")
     parser.add_argument("--no-whole", action="store_true")
     args = parser.parse_args()
-    if args.image_size % 14:
-        raise SystemExit("DINOv2 image-size must be divisible by patch size 14 (use 224 or 518)")
+    from diptera_id.embedding import validate_image_size
+    try:
+        validate_image_size(args.model, args.image_size)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     if args.tile_grid < 1 or args.tile_grid > 4:
         raise SystemExit("tile-grid must be between 1 and 4")
 

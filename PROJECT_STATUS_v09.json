@@ -1,0 +1,15 @@
+{
+  "version": "0.9.0",
+  "name": "Multi-source PoC + Genus Key Finder",
+  "baseline": "one padded whole image -> DINOv3 ViT-B/16",
+  "corpus_target": 100000,
+  "sources": ["BIOSCAN-5M", "iNaturalist", "GBIF", "DiSSCo"],
+  "target_families": 20,
+  "newly_explicit_families": ["Muscidae", "Tachinidae"],
+  "bioscan_reuse_mode": "completed 30k is preserved; selective top-up downloads only missing Muscidae/Tachinidae rows",
+  "bioscan_family_topup_minimum": {"Muscidae": 1500, "Tachinidae": 1500},
+  "classification": "family -> genus -> selective species",
+  "safeguards": ["open-set rejection", "source-wise evaluation", "specimen-group-safe split", "license filtering", "cross-source deduplication"],
+  "key_finder": "top genus candidates -> curated catalog + Crossref + OpenAlex -> ranked key leads",
+  "biological_results": "pending first complete run"
+}

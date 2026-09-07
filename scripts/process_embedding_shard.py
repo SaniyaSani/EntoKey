@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Stream one image shard through DINOv2 and write a resumable embedding shard.
+"""Stream one image shard through DINOv3/DINOv2 and write a resumable whole-fly embedding shard.
 
 Remote images are decoded in memory and discarded after embedding.  Only the
 compact vectors, provenance manifest and failure report are persisted.
@@ -26,7 +26,7 @@ from diptera_id.embedding import DINOEmbedder
 from embed_multiview import crops_for, fuse_specimens, normalized_mean
 
 
-USER_AGENT = "EntoKey-Foundation/0.5 (licensed biodiversity research; resumable embedding worker)"
+USER_AGENT = "TaxaLens-WholeFly/0.8 (licensed biodiversity research; resumable embedding worker)"
 
 
 def open_image(row: pd.Series, session: requests.Session, max_bytes: int) -> tuple[Image.Image, int]:
@@ -56,18 +56,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--manifest", required=True)
     parser.add_argument("--out-dir", required=True)
-    parser.add_argument("--model", default="facebook/dinov2-base")
-    parser.add_argument("--image-size", type=int, default=518)
-    parser.add_argument("--tile-grid", type=int, default=2)
-    parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--model", default="facebook/dinov3-vits16-pretrain-lvd1689m")
+    parser.add_argument("--image-size", type=int, default=512)
+    parser.add_argument("--tile-grid", type=int, default=1, help="1 = whole-image baseline; >1 is an explicit multi-crop ablation")
+    parser.add_argument("--batch-size", type=int, default=4)
     parser.add_argument("--no-whole", action="store_true")
     parser.add_argument("--max-image-mb", type=int, default=30)
     parser.add_argument("--min-success-rate", type=float, default=0.80)
     parser.add_argument("--retries", type=int, default=2)
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
-    if args.image_size % 14:
-        raise SystemExit("DINOv2 image-size must be divisible by 14")
+    from diptera_id.embedding import validate_image_size
+    try:
+        validate_image_size(args.model, args.image_size)
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
     if not 1 <= args.tile_grid <= 4:
         raise SystemExit("tile-grid must be between 1 and 4")
 

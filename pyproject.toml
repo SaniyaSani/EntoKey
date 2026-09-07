@@ -1,8 +1,8 @@
 [project]
 name = "swiss-diptera-id-workbench"
-version = "0.6.0"
-description = "DINOv2-based Diptera identification workbench with hierarchical classification and specimen retrieval"
+version = "0.9.0"
+description = "Multi-source DINOv3 Diptera workbench with hierarchical classification, retrieval and genus-key discovery"
 requires-python = ">=3.10"
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
+pythonpath = ["src", "."]

@@ -1,0 +1,28 @@
+{
+  "project": "TaxaLens / Swiss Diptera ID Workbench",
+  "version": "0.8.0",
+  "architecture": "whole-image default baseline",
+  "mandatory_segmentation": false,
+  "mandatory_crop": false,
+  "default_tiles": false,
+  "backbone_default": "facebook/dinov3-vits16-pretrain-lvd1689m",
+  "backbone_heavy": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+  "target_corpus": {
+    "BIOSCAN": 30000,
+    "iNaturalist": 30000,
+    "GBIF": 25000,
+    "DiSSCo": 15000,
+    "total": 100000
+  },
+  "default_embedding": {
+    "strategy": "whole_image_only",
+    "tile_grid": 1,
+    "one_embedding_per_image": true
+  },
+  "later_ablations": [
+    "specimen_crop",
+    "whole_plus_2x2_tiles",
+    "targeted_head_or_wing_specialists"
+  ],
+  "decision_rule": "keep optional preprocessing only if it improves the same held-out validation split"
+}

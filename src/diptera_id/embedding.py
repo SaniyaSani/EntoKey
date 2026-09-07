@@ -4,57 +4,101 @@ from dataclasses import dataclass
 from typing import Iterable
 
 import numpy as np
-import torch
 from PIL import Image, ImageOps
-from transformers import AutoImageProcessor, AutoModel
-
 from .device import best_device
+
+
+def patch_size_hint(model_name: str) -> int | None:
+    """Best-effort patch-size hint without downloading the model config."""
+    name = model_name.lower()
+    if "dinov3" in name and ("vit" in name or "vits" in name or "vitb" in name or "vitl" in name or "vith" in name):
+        return 16
+    if "dinov2" in name:
+        return 14
+    return None
+
+
+def validate_image_size(model_name: str, image_size: int) -> None:
+    if image_size < 64:
+        raise ValueError("image_size is implausibly small")
+    patch = patch_size_hint(model_name)
+    if patch and image_size % patch:
+        raise ValueError(f"{model_name} expects an image size divisible by patch size {patch}; got {image_size}")
 
 
 @dataclass
 class DINOEmbedder:
-    model_name: str = "facebook/dinov2-small"
+    """Generic DINOv2/DINOv3 feature extractor.
+
+    The project name is kept for backwards compatibility, but v0.8 defaults to
+    DINOv3. The backbone stays frozen: downstream taxonomic heads are trained on
+    normalized specimen embeddings.
+    """
+
+    model_name: str = "facebook/dinov3-vits16-pretrain-lvd1689m"
     device: str | None = None
-    image_size: int = 224
+    image_size: int = 512
 
     def __post_init__(self) -> None:
+        validate_image_size(self.model_name, self.image_size)
         self.device = self.device or best_device()
+        from transformers import AutoImageProcessor, AutoModel
         self.processor = AutoImageProcessor.from_pretrained(self.model_name)
         self.model = AutoModel.from_pretrained(self.model_name)
         self.model.eval().to(self.device)
+        config_patch = getattr(self.model.config, "patch_size", None)
+        if isinstance(config_patch, (list, tuple)) and config_patch:
+            config_patch = config_patch[0]
+        if isinstance(config_patch, int) and self.image_size % config_patch:
+            raise ValueError(
+                f"image_size={self.image_size} is not divisible by loaded model patch_size={config_patch}"
+            )
 
-    @torch.inference_mode()
     def embed_images(self, images: Iterable[Image.Image]) -> np.ndarray:
+        import torch
+
         images = [img.convert("RGB") for img in images]
         if not images:
             dimension = int(getattr(self.model.config, "hidden_size", 384))
             return np.empty((0, dimension), dtype=np.float32)
 
-        processor_args = {"images": images, "return_tensors": "pt"}
-        if self.image_size != 224:
-            images = [
-                ImageOps.pad(image, (self.image_size, self.image_size), method=Image.Resampling.LANCZOS, color=(127, 127, 127))
-                for image in images
-            ]
-            processor_args.update({"images": images, "do_resize": False, "do_center_crop": False})
-        inputs = self.processor(**processor_args)
-        inputs = {k: v.to(self.device) for k, v in inputs.items()}
-        outputs = self.model(**inputs)
+        # We explicitly pad to a square so whole-image geometry is preserved
+        # instead of silently center-cropping away appendages or wing tips.
+        padded = [
+            ImageOps.pad(
+                image,
+                (self.image_size, self.image_size),
+                method=Image.Resampling.LANCZOS,
+                color=(127, 127, 127),
+            )
+            for image in images
+        ]
+        inputs = self.processor(
+            images=padded,
+            return_tensors="pt",
+            do_resize=False,
+            do_center_crop=False,
+        )
+        inputs = {key: value.to(self.device) for key, value in inputs.items()}
+        with torch.inference_mode():
+            outputs = self.model(**inputs)
 
         pooled = getattr(outputs, "pooler_output", None)
         if pooled is None:
-            pooled = outputs.last_hidden_state[:, 0]
+            hidden = getattr(outputs, "last_hidden_state", None)
+            if hidden is None:
+                raise RuntimeError("vision backbone returned neither pooler_output nor last_hidden_state")
+            pooled = hidden[:, 0]
 
         emb = pooled.detach().float().cpu().numpy().astype(np.float32)
         norms = np.linalg.norm(emb, axis=1, keepdims=True)
-        emb = emb / np.clip(norms, 1e-12, None)
-        return emb
+        return emb / np.clip(norms, 1e-12, None)
 
     def embed_one(self, image: Image.Image) -> np.ndarray:
         return self.embed_images([image])[0]
 
-    def embed_multicrop(self, image: Image.Image, tile_grid: int = 2, include_whole: bool = True) -> np.ndarray:
-        """Fuse a whole-image view with non-overlapping high-detail tiles."""
+    def embed_multicrop(self, image: Image.Image, tile_grid: int = 1, include_whole: bool = True) -> np.ndarray:
+        """Optional ablation helper. Default tile_grid=1 returns the whole-image embedding only."""
         image = image.convert("RGB")
         crops: list[Image.Image] = [image] if include_whole else []
         if tile_grid > 1:

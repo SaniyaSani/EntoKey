@@ -17,7 +17,7 @@ import requests
 
 
 DEFAULT_API = "https://disscover.dissco.eu/api"
-USER_AGENT = "EntoKey-Foundation/0.5 (DiSSCo open-data research harvester)"
+USER_AGENT = "TaxaLens-WholeFly/0.7 (DiSSCo open-data research harvester)"
 
 
 def jsonapi_items(payload: object) -> list[dict]:

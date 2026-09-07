@@ -24,7 +24,7 @@ from PIL import Image
 
 
 DEFAULT_CONFIG = Path(__file__).resolve().parents[1] / "configs" / "bioscan_archives_v06.json"
-USER_AGENT = "EntoKey-BIOSCAN-Selective/0.6 (licensed biodiversity research)"
+USER_AGENT = "TaxaLens-BIOSCAN-Selective/0.6 (licensed biodiversity research)"
 
 
 def is_remote(location: str) -> bool:

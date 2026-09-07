@@ -31,7 +31,7 @@ def main():
     if manifest.empty:
         raise SystemExit("No local images found. Run build_inat_pilot.py with --download, or provide your own manifest.")
 
-    embedder = DINOEmbedder(args.model)
+    embedder = DINOEmbedder(args.model, image_size=512)
     vectors = []
     kept = []
     for start in range(0, len(manifest), args.batch_size):

@@ -19,7 +19,7 @@ from diptera_id.corpus.io import ManifestWriter, iter_table
 from diptera_id.corpus.schema import finalize_record, normalize_license
 
 
-UA = "EntoKey-Foundation/0.5 (licensed research image cache)"
+UA = "TaxaLens-Foundation/0.5 (licensed research image cache)"
 
 
 def safe_source(value: str) -> str:
@@ -65,11 +65,20 @@ def main() -> None:
                     record["exclusion_reason"] = "missing_image_location"
                     output.append(record)
                     continue
+                destination = root / safe_source(record["source"]) / record["record_id"][:2] / f"{record['record_id']}.jpg"
+                if destination.exists():
+                    try:
+                        Image.open(destination).verify()
+                        record["local_path"] = str(destination)
+                        record["image_sha256"] = hashlib.sha256(destination.read_bytes()).hexdigest()
+                        output.append(record)
+                        continue
+                    except Exception:
+                        destination.unlink(missing_ok=True)
                 if args.max_images and attempted >= args.max_images:
                     stop = True
                     break
                 attempted += 1
-                destination = root / safe_source(record["source"]) / record["record_id"][:2] / f"{record['record_id']}.jpg"
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 try:
                     response = session.get(record["image_url"], timeout=45)

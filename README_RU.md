@@ -1,252 +1,186 @@
-# Swiss Diptera ID Workbench 🪰
+# TaxaLens v0.9 — Multi-Source PoC + Genus Key Finder 🪰🔑
 
-## Новое в v0.6: BIOSCAN Diptera 30k без полного image corpus
+Это восстановленная последняя версия проекта. Она соединяет 100k multi-source
+pipeline и автоматический поиск определительных ключей после предсказания рода.
 
-Перед foundation training теперь есть отдельный надёжный этап BIOSCAN:
-
-- потоковый фильтр официальных метаданных только по `order = Diptera`;
-- ровно 30 000 taxon-balanced specimens;
-- сохранение официальных train/val/test/unseen split’ов;
-- выборочное извлечение JPEG из официальных ZIP по HTTP Range;
-- checksum metadata, проверка каждого JPEG и атомарная запись;
-- checkpoint и безопасное продолжение после остановки Colab;
-- готовый provenance-rich Parquet manifest для master corpus.
-
-Начни здесь: [BIOSCAN_30K_V06_RU.md](BIOSCAN_30K_V06_RU.md), затем открой
-`notebooks/BIOSCAN_30K_SELECTIVE_v06_Colab.ipynb`.
-
-Одна команда:
-
-```bash
-python scripts/run_bioscan_30k.py --root ~/EntoKeyData/bioscan
-```
-
-## Новое в v0.5: Foundation Corpus 100k
-
-Это первый действительно multi-source training workflow:
-
-- 30k iNaturalist field images;
-- 30k BIOSCAN-5M DNA/BIN-backed specimens;
-- 25k GBIF preserved specimen images;
-- 15k DiSSCo digital specimens;
-- DINOv2-base at 518 px with whole-image + four tiles;
-- примерно 50 возобновляемых embedding shards;
-- JPEG from URL sources декодируются в памяти и не обязаны храниться целиком;
-- строгая проверка, что все четыре источника присутствуют до обучения.
-
-Основной 100k profile теперь лежит в `configs/foundation_corpus_v06.json`. Рядом есть `configs/foundation_corpus_full_v05.json`: он снимает sample cap и потоково планирует все eligible records.
-
-Начни с [FOUNDATION_V05_RU.md](FOUNDATION_V05_RU.md), затем открой:
-
-1. `notebooks/Foundation_Corpus_v05_SETUP_Colab.ipynb`;
-2. `notebooks/Foundation_Corpus_v05_TRAIN_Colab.ipynb`.
-
-## Новое в v0.4: MicroDiptera
-
-Следующая модель предназначена для маленьких и сложных Diptera:
-
-- 18 targeted MicroDiptera families;
-- family-balanced pilot collection;
-- DINOv2 at 518 px + four detail tiles;
-- multi-view specimen fusion;
-- conditional family → genus → species heads;
-- centroid-based open-set rejection;
-- species training только на curated A/B labels по умолчанию.
-
-Запуск: [MICRODIPTERA_V04_RU.md](MICRODIPTERA_V04_RU.md) и
-`notebooks/MicroDiptera_v04_Colab.ipynb`.
-
-## Новое в v0.3: One-Command Training Kit
-
-v0.3 превращает корпусный pipeline в запускаемый workflow:
-
-- точный адаптер официальных четырёх таблиц iNaturalist Open Data;
-- BIOSCAN exporter через официальный Python package;
-- полный GBIF download lifecycle;
-- конфиг `configs/pilot.json` и единая команда `prepare_corpus.py`;
-- multi-domain обучение с балансировкой источников;
-- Colab notebook для быстрого proof-of-training.
-
-Начни здесь: [ONE_COMMAND_TRAINING_RU.md](ONE_COMMAND_TRAINING_RU.md).
-
-## Diptera Foundation Corpus (добавлено в v0.2)
-
-Добавлен рабочий bulk-ingestion pipeline для **iNaturalist + BIOSCAN-5M + GBIF preserved specimens + DiSSCo**:
-
-- единая master schema и Parquet/CSV streaming;
-- disk-backed occurrence ↔ multimedia joins;
-- license normalization/filtering;
-- DNA/BIN и source splits BIOSCAN;
-- openDS media expansion для DiSSCo;
-- taxonomy harmonization;
-- cross-source deduplication;
-- deterministic specimen-group splits;
-- domain-balanced pilot sampling;
-- licensed image cache downloader.
-
-Полная инструкция: [CORPUS_PIPELINE_RU.md](CORPUS_PIPELINE_RU.md).
-
-Важно: v0.2 содержит **pipeline**, а не сами многомиллионные datasets и не притворяется уже обученной global model. Сначала собираются официальные bulk exports и пилот, затем embeddings/training запускаются на подходящем storage/GPU.
-
-Это **не фейковый идентификатор**. Проект намеренно не возвращает mock-ID, если реальные ML-артефакты ещё не обучены.
-
-## Что уже собрано
-
-1. **License-aware iNaturalist pilot dataset builder** для Diptera (`taxon_id=47822`).
-2. **DINOv2-small** как frozen visual backbone → 384-dimensional normalized embeddings.
-3. Независимые classifiers для **family → genus → species** на frozen embeddings.
-4. **Nearest-neighbour specimen search** по cosine similarity (FAISS, с NumPy fallback).
-5. Web UI + FastAPI: загрузка фото → AI candidates → похожие specimens → morphology checklist.
-6. Консервативное правило: если species score слабый, интерфейс **не делает вид, что species определён**.
-7. Manifest хранит источник, observer, photo license, attribution и URL наблюдения.
-8. Поддержка твоих собственных microscope/pinned images через `add_local_specimens.py`.
-
-## Почему DINOv2-small
-
-На Mac это намного реалистичнее, чем ViT-L/G: backbone достаточно сильный для первого прототипа, а embedding всего 384 чисел. Потом можно сравнить `dinov2-base`, BioCLIP и специализированные insect encoders.
-
----
-
-## Быстрый запуск
-
-### 1. Создать environment
-
-```bash
-cd swiss-diptera-id-workbench
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -U pip
-pip install -r requirements.txt
-```
-
-> На Apple Silicon, если `faiss-cpu` не установится, это **не блокер**: retrieval автоматически использует NumPy cosine similarity.
-
-### 2. Скачать маленький реальный pilot dataset
-
-```bash
-python scripts/build_inat_pilot.py --place-id 7236 --pages 5 --per-page 100 --download
-```
-
-В примере `place-id 7236` ограничивает выборку Швейцарией. Убери `--place-id 7236`, если нужен мировой корпус. По умолчанию берутся только `cc0, cc-by, cc-by-sa`. `CC-BY-NC` специально не включён, чтобы будущий open-source проект не оказался случайно привязан к non-commercial training media.
-
-Для серьёзного корпуса (тысячи/миллионы фото) **не надо скрейпить API**: используй официальный iNaturalist Licensed Observation Images dataset или GBIF/DwC-A export и преобразуй его в такой же manifest.
-
-### 3. Сделать реальные DINOv2 embeddings
-
-```bash
-python scripts/embed_dataset.py --manifest data/inat_pilot_manifest.csv
-```
-
-Первый запуск скачает pretrained `facebook/dinov2-small`.
-
-### 4. Обучить family/genus/species classifiers
-
-```bash
-python scripts/train_multidomain.py --min-images-per-class 8 --out models/classifiers.joblib
-```
-
-Скрипт сначала оценивает top-1/top-5 на group-based holdout (одна observation не течёт одновременно в train/test), потом переобучает classifier на всех пригодных данных.
-
-### 5. Построить reference-specimen search
-
-```bash
-python scripts/build_retrieval_index.py
-```
-
-### 6. Запустить workbench
-
-```bash
-PYTHONPATH=src uvicorn app.api:app --reload
-```
-
-Открыть:
+Биологический scope теперь содержит **20 целевых семейств Diptera**: исходные
+18 MicroDiptera плюс **Muscidae** и **Tachinidae**. Единый список находится в
+`configs/target_diptera_families.json`; `plan` применяет его ко всем четырём
+источникам и отдельно проверяет присутствие Muscidae и Tachinidae.
 
 ```text
-http://127.0.0.1:8000
+FULL IMAGE -> DINOv3 ViT-B/16 -> family -> top genera -> selective species
+                                   |             |
+                                   |             +-> Genus Key Finder
+                                   +-> open-set rejection + similar specimens
 ```
+
+Genus Key Finder берёт до четырёх предложенных родов, добавляет наиболее
+вероятное семейство и ищет кандидаты-определители в локальном проверяемом
+каталоге, Crossref и OpenAlex. Найденная публикация — это **кандидат на ключ**,
+а не подтверждение определения: интерфейс явно просит проверить регион,
+таксономический охват и диагностические признаки.
+
+## Одна команда-оркестратор
+
+```bash
+python scripts/run_multisource_poc_v09.py --stage doctor --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN
+python scripts/run_multisource_poc_v09.py --stage download --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN --reuse-existing-bioscan
+python scripts/run_multisource_poc_v09.py --stage ingest --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN
+python scripts/run_multisource_poc_v09.py --stage assemble --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN
+python scripts/run_multisource_poc_v09.py --stage plan --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN
+python scripts/run_multisource_poc_v09.py --stage cache --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN
+python scripts/run_multisource_poc_v09.py --stage embed --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN --max-shards 1
+python scripts/run_multisource_poc_v09.py --stage train --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN
+python scripts/run_multisource_poc_v09.py --stage evaluate --data-root ~/TaxaLensData --bioscan-root /PATH/TO/EXISTING/BIOSCAN
+```
+
+Для уже завершённого `Foundation_v06` сначала запускается отдельный selective
+top-up. Он сохраняет готовые 30k и докачивает только недостающее до 1 500
+Muscidae и 1 500 Tachinidae:
+
+```bash
+python scripts/run_multisource_poc_v09.py \
+  --stage bioscan-topup \
+  --data-root /content/drive/MyDrive/EntoKey/Foundation_v06 \
+  --bioscan-root /content/drive/MyDrive/EntoKey/Foundation_v06/raw/bioscan \
+  --bioscan-manifest /content/drive/MyDrive/EntoKey/Foundation_v06/manifests/bioscan_raw.parquet
+```
+
+`--reuse-existing-bioscan` остаётся отдельным строгим локальным режимом для
+обычного `download`: он не делает BIOSCAN-запросов, пока загружаются или
+подготавливаются другие источники. Подробности находятся в
+`BIOSCAN_MUSCIDAE_TACHINIDAE_TOPUP_RU.md`.
+
+Проверить Key Finder отдельно:
+
+```bash
+python scripts/find_genus_keys.py --family Syrphidae --genera Eristalis,Helophilus
+```
+
+Для полностью офлайн-проверки добавь `--offline`. Web-интерфейс показывает
+локальные рекомендации сразу, а затем автоматически дополняет их live-поиском.
+
+## 100k PoC
+
+| Источник | Цель |
+| --- | ---: |
+| BIOSCAN-5M | 30,000 |
+| iNaturalist | 30,000 |
+| GBIF | 25,000 |
+| DiSSCo | 15,000 |
+| **Всего** | **100,000** |
 
 ---
 
-# Добавление твоих собственных specimens
+## Сохранённая логика baseline A из v0.8
 
-Допустим, у тебя есть папка фотографий проверенного `Syrphidae / Eristalis / Eristalis tenax`:
-
-```bash
-python scripts/add_local_specimens.py \
-  --image-dir /path/to/Eristalis_tenax \
-  --family Syrphidae \
-  --genus Eristalis \
-  --species "Eristalis tenax" \
-  --collector "Sanny" \
-  --voucher-prefix BIOBLITZ26_ETENAX
-```
-
-Объединить iNat + local:
-
-```bash
-python scripts/merge_manifests.py \
-  data/inat_pilot_manifest.csv \
-  data/local_specimens_manifest.csv \
-  --out data/training_manifest.csv
-```
-
-Потом заново:
-
-```bash
-python scripts/embed_dataset.py --manifest data/training_manifest.csv
-python scripts/train_multidomain.py --out models/classifiers.joblib
-python scripts/build_retrieval_index.py
-```
-
-## Очень важно для pinned material
-
-iNaturalist в основном содержит field photos. Твои specimens — pinned/dead/stereo-microscope views. Это **domain shift**. Поэтому следующая настоящая цель — собрать multi-view reference set:
-
-- dorsal habitus
-- lateral habitus
-- head frontal/lateral
-- wing
-- antenna/arista
-- legs / key diagnostic structures
-- genitalia, если это необходимо для taxon
-
-И хранить `specimen_id`, чтобы разные виды одного specimen не попадали одновременно в train и test.
-
----
-
-# Как выглядит pipeline
+## Сейчас делаем только baseline A
 
 ```text
-photo
-  ↓
-DINOv2-small
-  ↓
-384-d normalized embedding
-  ├── family classifier
-  ├── genus classifier
-  ├── species classifier
-  └── cosine nearest-neighbour index
-           ↓
-      similar verified specimens
-
-AI candidate
-  ↓
-Morphology checklist
-  ↓
-Key / publication
-  ↓
-Human-confirmed identification
+FULL IMAGE -> DINOv3 -> family -> genus -> species -> uncertainty -> similar specimens
 ```
 
-# Следующие scientific upgrades после v0.5
+**Никаких anatomy masks. Никаких 2x2 tiles. Никакого обязательного crop.**
 
-1. **Open-set calibration** на отдельном наборе неизвестных taxa и imaging domains.
-2. **Multimodal image ↔ DNA embedding** на BIOSCAN specimens.
-3. **Learned diagnostic regions** вместо только фиксированных image tiles.
-4. **Geographic prior**: Switzerland/canton/altitude/phenology как отдельный score, а не как замена morphology.
-5. **Active learning**: uncertain specimens складываются в очередь для ручной проверки; после верификации попадают обратно в training set.
-6. **Key routing**: family/genus candidate автоматически открывает нужный couplet/page/diagnostic characters.
+Цель v0.9 — сначала честно измерить, насколько далеко мы можем уехать на одной полной картинке, а затем направить человека к подходящему морфологическому ключу.
 
-## Что означает confidence
+## Данные
 
-`predict_proba` в этой версии — **model score**, а не вероятность того, что определение истинно. Для species принят более высокий порог, но окончательное подтверждение должно идти через morphology/key.
+Первый target corpus:
+
+| Источник | Цель | Роль |
+| --- | ---: | --- |
+| BIOSCAN-5M | 30,000 | standardized preserved/DNA-linked specimens |
+| iNaturalist | 30,000 | field photos and natural backgrounds |
+| GBIF | 25,000 | museum/preserved specimen media |
+| DiSSCo | 15,000 | European digital specimens/media |
+
+Cross-source deduplication остаётся обязательной.
+
+## Default backbone
+
+```text
+facebook/dinov3-vits16-pretrain-lvd1689m
+```
+
+Default representation:
+
+```text
+one complete image -> one normalized DINOv3 embedding
+```
+
+Перед backbone изображение вписывается в 512x512 с сохранением aspect ratio и padding. Мы не center-crop'аем муху и не режем её на части.
+
+## Основные entry points
+
+```text
+configs/wholefly_foundation_v08.json
+configs/sources_wholefly_v08.example.json
+scripts/source_status_v08.py
+scripts/run_wholefly_v08.py
+notebooks/WholeFly_Foundation_v08_Colab.ipynb
+```
+
+## Порядок работы
+
+### 1. Подготовить/скачать источники
+
+BIOSCAN можно докачивать текущим selective workflow. iNaturalist, GBIF и DiSSCo подключаются как отдельные source manifests.
+
+### 2. Проверить, что уже есть
+
+```bash
+python scripts/source_status_v08.py --config configs/sources_wholefly_v08.example.json
+```
+
+### 3. Собрать master manifest
+
+```bash
+python scripts/prepare_corpus.py \
+  --config configs/sources_wholefly_v08.example.json \
+  --stage assemble
+```
+
+Ожидаемый путь:
+
+```text
+data/corpus_v08/master_manifest.parquet
+```
+
+### 4. Сделать plan
+
+```bash
+python scripts/run_wholefly_v08.py \
+  --master-manifest data/corpus_v08/master_manifest.parquet \
+  --stage plan
+```
+
+### 5. Построить whole-image embeddings
+
+```bash
+python scripts/run_wholefly_v08.py \
+  --master-manifest data/corpus_v08/master_manifest.parquet \
+  --stage embed \
+  --max-shards 2
+```
+
+Завершённые shards пропускаются при следующем запуске.
+
+### 6. Train
+
+```bash
+python scripts/run_wholefly_v08.py \
+  --master-manifest data/corpus_v08/master_manifest.parquet \
+  --stage train
+```
+
+## Важно: tiles НЕ удалены навсегда
+
+Код multi-crop сохранён только как **эксперимент C**, но он не включается default config'ом. После baseline A мы можем создать отдельный config с `tile_grid: 2` и сравнить его на том же validation split.
+
+Если C не выигрывает — выкидываем его. Никакой дополнительной ручной работы не требуется.
+
+## Anatomy pilot
+
+20 хороших экспертных anatomy annotations можно сохранить как research seed. Они не нужны для baseline A и не блокируют обучение.

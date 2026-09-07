@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a license-aware, family-balanced MicroDiptera pilot from iNaturalist.
+"""Build a license-aware, family-balanced target-Diptera pilot from iNaturalist.
 
 This API workflow is intentionally bounded and intended for a pilot only.  Use
 the official Open Data tables for a large corpus.
@@ -75,8 +75,8 @@ def family_observations(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--config", default="configs/microdiptera_families.json")
-    parser.add_argument("--out", default="data/microdiptera")
+    parser.add_argument("--config", default="configs/target_diptera_families.json")
+    parser.add_argument("--out", default="data/target_diptera")
     parser.add_argument("--per-family", type=int, default=150)
     parser.add_argument("--per-page", type=int, default=100)
     parser.add_argument("--place-id", type=int, default=None)
@@ -179,11 +179,11 @@ def main() -> None:
         family_report[family_name] = {"taxon_id": family_taxon["id"], "images": accepted}
         print(f"{family_name}: {accepted} images")
 
-    manifest = out / "microdiptera_manifest.csv"
+    manifest = out / "target_diptera_manifest.csv"
     with ManifestWriter(manifest) as writer:
         writer.write(rows)
     (out / "collection_report.json").write_text(json.dumps(family_report, indent=2), encoding="utf-8")
-    print(f"wrote {len(rows)} balanced MicroDiptera images -> {manifest}")
+    print(f"wrote {len(rows)} balanced target-Diptera images -> {manifest}")
 
 
 if __name__ == "__main__":

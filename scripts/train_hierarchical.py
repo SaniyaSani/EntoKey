@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
+from collections import Counter
 
 
 def deterministic_split(group: str, train_percent: int = 80, val_percent: int = 10) -> str:
@@ -51,6 +52,43 @@ def top_k_accuracy(y_true: np.ndarray, probabilities: np.ndarray, classes: np.nd
     return float(np.mean(np.any(winners == truth[:, None], axis=1)))
 
 
+def evaluation_breakdown(
+    truth: np.ndarray,
+    predicted: np.ndarray,
+    probabilities: np.ndarray,
+    classes: np.ndarray,
+    sources: np.ndarray,
+    source_splits: np.ndarray | None = None,
+) -> dict:
+    by_source: dict[str, dict] = {}
+    for source in sorted(set(sources)):
+        mask = sources == source
+        if not np.any(mask):
+            continue
+        by_source[str(source)] = {
+            "n": int(mask.sum()),
+            "top1_accuracy": float(accuracy_score(truth[mask], predicted[mask])),
+            "top5_accuracy": top_k_accuracy(truth[mask], probabilities[mask], classes, min(5, len(classes))),
+        }
+    by_source_split: dict[str, dict] = {}
+    if source_splits is not None:
+        for split in sorted({str(value) for value in source_splits if str(value)}):
+            mask = source_splits == split
+            if not np.any(mask):
+                continue
+            by_source_split[split] = {
+                "n": int(mask.sum()),
+                "top1_accuracy": float(accuracy_score(truth[mask], predicted[mask])),
+                "top5_accuracy": top_k_accuracy(truth[mask], probabilities[mask], classes, min(5, len(classes))),
+            }
+    errors = Counter((str(t), str(p)) for t, p in zip(truth, predicted) if str(t) != str(p))
+    confusion_pairs = [
+        {"truth": truth_label, "predicted": predicted_label, "count": int(count)}
+        for (truth_label, predicted_label), count in errors.most_common(50)
+    ]
+    return {"by_source": by_source, "by_source_split": by_source_split, "top_confusions": confusion_pairs}
+
+
 def train_head(
     vectors: np.ndarray,
     frame: pd.DataFrame,
@@ -84,6 +122,15 @@ def train_head(
             "top1_accuracy": float(accuracy_score(truth, predicted)),
             "top5_accuracy": top_k_accuracy(truth, probabilities, model.classes_, min(5, len(model.classes_))),
         })
+        sources_eval = frame.iloc[eval_indices]["source"].astype(str).to_numpy()
+        source_splits = (
+            frame.iloc[eval_indices]["source_split"].astype(str).to_numpy()
+            if "source_split" in frame.columns
+            else None
+        )
+        metrics.update(evaluation_breakdown(
+            truth, predicted, probabilities, model.classes_, sources_eval, source_splits
+        ))
     return model, gate, metrics
 
 
@@ -167,11 +214,11 @@ def main() -> None:
             "species_by_genus": species_gates,
         },
         "metadata": {
-            "training": "hierarchical source-balanced high-resolution multi-view embeddings",
+            "training": "hierarchical source-balanced whole-fly DINO embeddings",
             "embedding": embedding_config,
             "species_label_quality": sorted(allowed_quality),
             "open_set": {"method": "class centroid lower-quantile gate", "quantile": args.gate_quantile, "margin": args.gate_margin},
-            "confidence_note": "scores are not taxonomic certainty; species requires morphology",
+            "confidence_note": "scores are not taxonomic certainty; fine-rank suggestions require independent verification",
             "evaluation": report,
         },
     }
