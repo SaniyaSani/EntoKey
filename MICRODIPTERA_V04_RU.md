@@ -1,3 +1,5 @@
+> **LEGACY / reference:** этот документ сохранён для воспроизводимости старого pipeline. Для текущей архитектуры используй `README_RU.md` и `WHOLE_FLY_PIPELINE_RU.md`.
+
 # MicroDiptera v0.4
 
 v0.4 — это family-first модель для маленьких Diptera. Она не обещает species-ID
@@ -34,7 +36,10 @@ family → conditional genus → conditional species
 проверки увеличивай `PER_FAMILY` постепенно; для большого корпуса используй
 официальные Open Data tables и v0.3 corpus adapters.
 
-Target families находятся в `configs/microdiptera_families.json`.
+Актуальные 20 target families находятся в `configs/target_diptera_families.json`:
+исходные 18 MicroDiptera плюс Muscidae и Tachinidae. Старый файл
+`configs/microdiptera_families.json` сохранён только для совместимости и содержит
+тот же расширенный список.
 
 ## Локальный запуск
 

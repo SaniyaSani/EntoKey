@@ -1,3 +1,5 @@
+> **LEGACY / reference:** этот документ сохранён для воспроизводимости старого pipeline. Для текущей архитектуры используй `README_RU.md` и `WHOLE_FLY_PIPELINE_RU.md`.
+
 # Как обучить Workbench на iNaturalist + BIOSCAN-5M + GBIF + DiSSCo
 
 ## Что означает «обучить на четырёх источниках»

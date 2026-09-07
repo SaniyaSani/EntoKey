@@ -1,4 +1,6 @@
-# EntoKey Foundation Model v0.5
+> **LEGACY / reference:** этот документ сохранён для воспроизводимости старого pipeline. Для текущей архитектуры используй `README_RU.md` и `WHOLE_FLY_PIPELINE_RU.md`.
+
+# TaxaLens Foundation Model v0.5
 
 > **Обновление v0.6:** BIOSCAN больше не требует полный image package. До запуска этого workflow сначала выполни [BIOSCAN_30K_V06_RU.md](BIOSCAN_30K_V06_RU.md). Новый selective downloader получает только выбранные 30 000 JPEG и сохраняет готовый `bioscan_diptera_30k_manifest.parquet`.
 

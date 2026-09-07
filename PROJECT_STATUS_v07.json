@@ -1,0 +1,30 @@
+{
+  "project": "TaxaLens / Swiss Diptera ID Workbench",
+  "version": "0.7.0",
+  "architecture": "whole-fly foundation model",
+  "mandatory_segmentation": false,
+  "backbone_default": "facebook/dinov3-vits16-pretrain-lvd1689m",
+  "backbone_heavy": "facebook/dinov3-vitb16-pretrain-lvd1689m",
+  "target_corpus": {
+    "BIOSCAN": 30000,
+    "iNaturalist": 30000,
+    "GBIF": 25000,
+    "DiSSCo": 15000,
+    "total": 100000
+  },
+  "pipeline": [
+    "source ingest",
+    "license filter",
+    "deduplication",
+    "group-safe split",
+    "DINOv3 whole-fly embeddings",
+    "family classifier",
+    "conditional genus classifier",
+    "conditional species classifier",
+    "open-set rejection",
+    "nearest-neighbour retrieval",
+    "error-driven optional morphology"
+  ],
+  "anatomy_policy": "optional research/verification only; never required by baseline",
+  "created_for": "v0.7 rebuild after anatomy-segmentation pilot"
+}
